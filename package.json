@@ -1,5 +1,5 @@
 {
-  "name": "google-oauth-backend",
+  "name": "Team_Psyducks_EY",
   "version": "1.0.0",
   "description": "A secure Node.js/Express backend implementing Google OAuth 2.0 authentication with JWT token management and PostgreSQL database integration",
   "type": "commonjs",
