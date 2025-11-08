@@ -1,8 +1,5 @@
 # LampStack
 
-<img width="1917" height="901" alt="Screenshot 2025-11-08 182442" src="https://github.com/user-attachments/assets/224b72cd-98bb-4834-9795-1605ef015790" />
-
-
 <div align="center">
 
 ![Java](https://img.shields.io/badge/Java-17-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)
@@ -16,6 +13,7 @@
 ![LangChain](https://img.shields.io/badge/LangChain-0.1.20-121212?style=for-the-badge&logo=chainlink&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=for-the-badge&logo=docker&logoColor=white)
 
+
 **Autonomous Healthcare Provider Data Validation Platform**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
@@ -25,21 +23,13 @@
 
 ---
 
-## Table of Contents
+<img width="1917" height="901" alt="Screenshot 2025-11-08 182442" src="https://github.com/user-attachments/assets/224b72cd-98bb-4834-9795-1605ef015790" />
 
-- [Problem Statement](#problem-statement)
-- [Solution Overview](#solution-overview)
-- [Methodology](#methodology)
-- [System Architecture](#system-architecture)
-- [Technology Stack](#technology-stack)
-- [Installation](#installation)
-- [Configuration](#configuration)
-- [Usage](#usage)
-- [API Documentation](#api-documentation)
-- [Agent Workflow](#agent-workflow)
-- [Performance Metrics](#performance-metrics)
-- [Contributing](#contributing)
-- [License](#license)
+<img width="1919" height="906" alt="Screenshot 2025-11-08 182409" src="https://github.com/user-attachments/assets/6047156b-6cb9-4b1c-b2bb-990f33e3ae33" />
+
+<img width="1918" height="899" alt="Screenshot 2025-11-08 182431" src="https://github.com/user-attachments/assets/9066e3cc-47c4-4a73-aac0-76ee3043720f" />
+
+
 
 ---
 
@@ -90,6 +80,12 @@ The platform implements a four-layer validation pipeline:
 
 ---
 
+## System Architecture
+
+<img width="1009" height="565" alt="Screenshot 2025-10-31 123328" src="https://github.com/user-attachments/assets/6c2c68f5-a9af-4334-868b-3012cddd3d3e" />
+
+---
+
 ## Methodology
 
 ### Multi-Agent Architecture
@@ -121,13 +117,6 @@ The system employs specialized AI agents, each responsible for a distinct valida
 - Updates PostgreSQL database with validation results
 
 ---
-
-## Snapshot
-<img width="1919" height="906" alt="Screenshot 2025-11-08 182409" src="https://github.com/user-attachments/assets/6047156b-6cb9-4b1c-b2bb-990f33e3ae33" />
-
-<img width="1918" height="899" alt="Screenshot 2025-11-08 182431" src="https://github.com/user-attachments/assets/9066e3cc-47c4-4a73-aac0-76ee3043720f" />
-
-
 
 ### Orchestration Strategy
 
@@ -165,12 +154,6 @@ F: <60    (Failed - major conflicts or missing critical data)
 
 ---
 
-## System Architecture
-
-<img width="1009" height="565" alt="Screenshot 2025-10-31 123328" src="https://github.com/user-attachments/assets/6c2c68f5-a9af-4334-868b-3012cddd3d3e" />
-
----
-
 ### Data Flow
 
 1. User uploads CSV or PDF containing provider data via React frontend
@@ -185,64 +168,6 @@ F: <60    (Failed - major conflicts or missing critical data)
 6. Python service sends progress updates to Java backend via HTTP callbacks
 7. Java backend broadcasts real-time updates to frontend via WebSocket
 8. Frontend displays validation results and trust scores
-
----
-
-## Technology Stack
-
-### Backend (Java Spring Boot)
-
-| Component | Version | Purpose |
-|-----------|---------|---------|
-| Java | 17 | Core programming language with modern features |
-| Spring Boot | 3.2 | Application framework and dependency injection |
-| Spring Data JPA | 3.2 | Database ORM and repository pattern |
-| Spring Security | 3.2 | JWT-based authentication and authorization |
-| Spring WebSocket | 3.2 | Real-time bidirectional communication |
-| PostgreSQL Driver | 42.7.1 | Database connectivity |
-| Lombok | 1.18.30 | Boilerplate code reduction |
-| OpenCSV | 5.9 | CSV file parsing and validation |
-| RestTemplate | 3.2 | HTTP client for Python service communication |
-
-### AI Agent Layer (Python)
-
-
-| Component | Version | Purpose |
-|-----------|---------|---------|
-| Python | 3.11+ | Core programming language for AI agents |
-| FastAPI | 0.109+ | High-performance async web framework |
-| LangGraph | 0.0.26+ | Multi-agent workflow orchestration |
-| LangChain | 0.1.20+ | LLM framework and chain composition |
-| Mistral AI | 0.1.8 | OCR processing using Pixtral-12B model |
-| Milvus | 2.3.6 | Vector database for semantic similarity search |
-| Sentence Transformers | 2.3.1 | Text embedding generation (all-MiniLM-L6-v2) |
-| PyTorch | 2.9+ | Machine learning framework |
-| BeautifulSoup4 | 4.12.3 | HTML/XML parsing for web scraping |
-| Requests | 2.31+ | HTTP library for external API calls |
-| Pydantic | 2.5+ | Data validation and settings management |
-
-### Frontend (React + TypeScript)
-
-| Component | Version | Purpose |
-|-----------|---------|---------|
-| React | 18.3.1 | UI component library |
-| TypeScript | 5.8.3 | Type-safe JavaScript development |
-| Vite | 5.4.19 | Fast build tool and development server |
-| Tailwind CSS | 3.4.17 | Utility-first CSS framework |
-| Radix UI | Latest | Accessible component primitives |
-| React Hook Form | 7.5+ | Form state management and validation |
-| Zustand | 4.4+ | Lightweight state management |
-
-### Infrastructure
-
-| Component | Version | Purpose |
-|-----------|---------|---------|
-| Docker | Latest | Containerization platform |
-| Docker Compose | Latest | Multi-container orchestration |
-| PostgreSQL | 15 | Primary relational database |
-| Milvus | 2.3.6 | Vector database for embeddings |
-| Etcd | Latest | Distributed key-value store (Milvus dependency) |
-| MinIO | Latest | Object storage (Milvus dependency) |
 
 ---
 
