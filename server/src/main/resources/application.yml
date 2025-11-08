@@ -1,0 +1,45 @@
+spring:
+  application:
+    name: provider-validation-api
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/provider_validation
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+server:
+  port: 8080
+
+app:
+  jwt:
+    secret: your-secret-key-change-this-in-production
+    expiration: 86400000
+
+  python:
+    agent-service:
+      url: http://localhost:5000
+      timeout: 300000
+
+  websocket:
+    allowed-origins: http://localhost:5173
+
+cors:
+  allowed-origins: http://localhost:5173
+  allowed-methods: GET,POST,PUT,DELETE,OPTIONS
+  allowed-headers: "*"
+  allow-credentials: true
