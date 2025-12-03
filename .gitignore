@@ -3,3 +3,4 @@ google-creds.json
 .env
 dist
 /generated/prisma
+.venv
