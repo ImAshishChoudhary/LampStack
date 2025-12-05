@@ -1,0 +1,17 @@
+fastapi
+uvicorn[standard]
+python-multipart
+pydantic
+
+pdfplumber
+pymupdf
+
+paddleocr
+pytesseract
+Pillow
+
+layoutparser
+
+# utilities
+numpy
+pandas
