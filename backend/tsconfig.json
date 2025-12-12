@@ -3,14 +3,16 @@
     "target": "ES2020",
     "module": "CommonJS",
     "lib": ["ES2020"],
+    "types": ["node"],
     "strict": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "moduleResolution": "node",
+    "ignoreDeprecations": "5.0",
     "resolveJsonModule": true,
     "outDir": "./dist",
     "skipLibCheck": true
   },
-  "include": ["src/index.ts"],
+  "include": ["src/**/*"],
   "exclude": ["node_modules"]
 }

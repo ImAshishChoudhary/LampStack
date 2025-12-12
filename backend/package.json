@@ -31,21 +31,29 @@
     "prisma:studio": "prisma studio"
   },
   "dependencies": {
-    "@prisma/client": "^6.11.1",
+    "@google/generative-ai": "^0.24.1",
+    "@mistralai/mistralai": "^1.10.0",
+    "@prisma/client": "^5.18.0",
     "@types/multer": "^2.0.0",
+    "@types/ws": "^8.18.1",
+    "axios": "^1.13.2",
     "cors": "^2.8.5",
+    "csv-parser": "^3.2.0",
     "dotenv": "^17.2.0",
     "express": "^5.1.0",
     "google-auth-library": "^10.4.2",
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.0.2",
-    "prisma": "^6.11.1",
-    "typescript": "^5.8.3"
+    "openai": "^6.10.0",
+    "typescript": "^5.8.3",
+    "ws": "^8.18.3"
   },
   "devDependencies": {
+    "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^24.0.13",
+    "prisma": "^5.18.0",
     "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0"
   }

@@ -17,3 +17,218 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
+
+// Provider Digital Twin - Versioned provider profiles
+model Provider {
+  id                String              @id @default(uuid())
+  npiNumber         String              @unique
+  currentVersion    Int                 @default(1)
+  
+  // Demographics
+  firstName         String
+  lastName          String
+  middleName        String?
+  credentials       String?             // MD, DO, NP, etc.
+  
+  // Contact Information
+  primaryPhone      String?
+  secondaryPhone    String?
+  email             String?
+  faxNumber         String?
+  
+  // Practice Information
+  practiceAddress   String?
+  city              String?
+  state             String?
+  zipCode           String?
+  country           String              @default("USA")
+  
+  // Professional Details
+  specialties       String[]            // Array of specialty codes
+  taxonomyCode      String?
+  licenseNumbers    String[]            // State medical license numbers
+  
+  // Network & Affiliations
+  insuranceNetworks String[]
+  hospitalAffiliations String[]
+  
+  // Metadata
+  isActive          Boolean             @default(true)
+  lastValidated     DateTime?
+  overallConfidence Float               @default(0.0) // 0-1 confidence score
+  
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  
+  // Relations
+  versions          ProviderVersion[]
+  validationResults ValidationResult[]
+  feedbacks         HumanFeedback[]
+  aiRecommendations AIRecommendation[]
+  
+  @@index([npiNumber])
+  @@index([state, city])
+  @@index([lastValidated])
+}
+
+// Versioned history of provider data (Digital Twin versions)
+model ProviderVersion {
+  id                Int                 @id @default(autoincrement())
+  providerId        String
+  versionNumber     Int
+  
+  // Snapshot of all provider fields at this version
+  snapshot          Json                // Full provider data snapshot
+  
+  // Change tracking
+  changedFields     String[]            // Which fields changed in this version
+  changeSource      String              // "npi_registry", "state_board", "web_scraping", "human_correction"
+  changeReason      String?             // Description of why change was made
+  
+  // Confidence for this version
+  confidence        Float               @default(0.0)
+  
+  createdAt         DateTime            @default(now())
+  
+  provider          Provider            @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  
+  @@unique([providerId, versionNumber])
+  @@index([providerId, createdAt])
+}
+
+// Validation results from AI agents
+model ValidationResult {
+  id                String              @id @default(uuid())
+  providerId        String
+  
+  // Agent information
+  agentName         String              // "validator", "enrichment", "cross_reference"
+  validationType    String              // "npi_check", "license_verification", "contact_validation", etc.
+  
+  // Validation outcome
+  status            String              // "success", "failed", "partial", "needs_review"
+  confidence        Float               @default(0.0) // 0-1 confidence score
+  
+  // Source information
+  sourceUrl         String?             // URL of data source
+  sourceType        String              // "npi_registry", "state_medical_board", "google_maps", etc.
+  apiResponse       Json?               // Raw API response stored
+  
+  // Findings
+  foundIssues       String[]            // List of issues found
+  suggestedFixes    Json?               // Suggested corrections
+  
+  // Timestamps
+  validatedAt       DateTime            @default(now())
+  
+  provider          Provider            @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  
+  @@index([providerId, validatedAt])
+  @@index([agentName, status])
+}
+
+// Trust Score Matrix - Tracks reliability of data sources
+model TrustScore {
+  id                Int                 @id @default(autoincrement())
+  
+  // Source identification
+  sourceType        String              // "npi_registry", "state_medical_board", "google_maps", etc.
+  dataField         String              // "phone_number", "address", "license_number", etc.
+  
+  // Trust metrics
+  score             Float               @default(0.5) // 0-1 trust score
+  successCount      Int                 @default(0)
+  failureCount      Int                 @default(0)
+  totalValidations  Int                 @default(0)
+  
+  // Learning parameters
+  learningRate      Float               @default(0.1)
+  lastUpdated       DateTime            @default(now())
+  
+  @@unique([sourceType, dataField])
+  @@index([sourceType])
+}
+
+// Human feedback for continuous improvement
+model HumanFeedback {
+  id                String              @id @default(uuid())
+  providerId        String
+  
+  // Reviewer information
+  reviewerEmail     String
+  reviewerName      String?
+  
+  // Feedback details
+  fieldName         String              // Which field was reviewed
+  originalValue     String?
+  correctedValue    String?
+  feedbackType      String              // "accept", "reject", "correct"
+  
+  // Impact on trust
+  affectedSource    String?             // Which source gets trust update
+  trustImpact       Float               @default(0.0) // +/- trust adjustment
+  
+  // Comments
+  notes             String?
+  
+  createdAt         DateTime            @default(now())
+  
+  provider          Provider            @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  
+  @@index([providerId, createdAt])
+  @@index([reviewerEmail])
+}
+
+// Batch validation jobs tracking
+model ValidationJob {
+  id                String              @id @default(uuid())
+  
+  // Job details
+  jobType           String              // "batch_validation", "credential_verification", "quality_assessment"
+  status            String              @default("pending") // "pending", "running", "completed", "failed"
+  
+  // Scope
+  totalProviders    Int                 @default(0)
+  processedProviders Int                @default(0)
+  successfulCount   Int                 @default(0)
+  failedCount       Int                 @default(0)
+  
+  // Timing
+  startedAt         DateTime?
+  completedAt       DateTime?
+  estimatedDuration Int?                // seconds
+  
+  // Results
+  summary           Json?               // Summary statistics
+  errorLog          String[]            // Error messages
+  
+  createdAt         DateTime            @default(now())
+  
+  @@index([status, createdAt])
+}
+
+// AI-powered recommendations (Phase 5)
+model AIRecommendation {
+  id                String              @id @default(uuid())
+  providerId        String
+  
+  // Recommendation details
+  recommendationType String             // "correction", "anomaly", "quality", "insight"
+  recommendation    String              // The actual recommendation text
+  confidence        Float               @default(0.0) // 0-1 confidence score
+  reasoning         String              // AI explanation for the recommendation
+  
+  // Status tracking
+  status            String              @default("pending") // "pending", "applied", "rejected"
+  appliedAt         DateTime?
+  appliedBy         String?             // User who applied the recommendation
+  
+  // Metadata
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  
+  provider          Provider            @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  
+  @@index([providerId, status])
+  @@index([recommendationType, createdAt])
+}

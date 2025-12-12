@@ -79,10 +79,22 @@ export function Sidebar({ onExpandChange }: SidebarProps) {
                 Provider validation system
               </NavLink>
               <NavLink
-                to="/"
+                to="/multi-validation"
                 className="block px-2.5 py-1.5 text-[13px] text-gray-600 hover:bg-gradient-to-r hover:from-gray-50 hover:to-cyan-50/60 active:bg-cyan-50/80 rounded-md transition-all"
               >
-                Healthcare directory cleanup
+                Multi-Source Validation ⭐
+              </NavLink>
+              <NavLink
+                to="/validation"
+                className="block px-2.5 py-1.5 text-[13px] text-gray-600 hover:bg-gradient-to-r hover:from-gray-50 hover:to-cyan-50/60 active:bg-cyan-50/80 rounded-md transition-all"
+              >
+                NPI Registry Only
+              </NavLink>
+              <NavLink
+                to="/flow"
+                className="block px-2.5 py-1.5 text-[13px] text-gray-600 hover:bg-gradient-to-r hover:from-gray-50 hover:to-cyan-50/60 active:bg-cyan-50/80 rounded-md transition-all"
+              >
+                Validation Flow
               </NavLink>
             </div>
           </div>

@@ -1,329 +1,333 @@
-﻿import { useState, useEffect } from 'react';
+﻿import { useState, useEffect, useRef, useCallback } from 'react';
 
-interface NodeData {
+interface ProcessingNode {
   id: string;
   label: string;
+  description?: string;
+  status: 'pending' | 'processing' | 'complete' | 'error';
+  agent: string;
+  children?: string[];
+  parentId?: string;
+}
+
+interface CanvasNode {
+  id: string;
+  label: string;
+  description?: string;
   x: number;
   y: number;
-  level: number;
-  children?: NodeData[];
+  status: 'pending' | 'processing' | 'complete' | 'error';
+  agent: string;
+  parentId?: string;
+  depth: number;
+  visible: boolean;
+}
+
+interface Edge {
+  from: string;
+  to: string;
+  animated: boolean;
 }
 
 interface IdeationCanvasProps {
-  autoStart?: boolean;
+  nodes?: ProcessingNode[];
 }
 
-export function IdeationCanvas({ autoStart = true }: IdeationCanvasProps) {
-  const [visibleNodes, setVisibleNodes] = useState<string[]>([]);
-  const [loadingNodes, setLoadingNodes] = useState<string[]>([]);
-
-  const rootNode: NodeData = {
-    id: "root",
-    label: "Provider Data Validation System",
-    x: 180,
-    y: 350,
-    level: 0,
-    children: [
-      {
-        id: "npi",
-        label: "NPI Registry Validation",
-        x: 450,
-        y: 180,
-        level: 1,
-        children: [
-          { 
-            id: "npi-1", 
-            label: "Active Status Verification", 
-            x: 720, 
-            y: 140, 
-            level: 2,
-            children: [
-              { id: "npi-1-1", label: "Check for Deactivation Records", x: 990, y: 120, level: 3 },
-              { id: "npi-1-2", label: "Validate Reactivation Dates", x: 990, y: 160, level: 3 }
-            ]
-          },
-          { 
-            id: "npi-2", 
-            label: "Demographics Data Matching", 
-            x: 720, 
-            y: 200, 
-            level: 2,
-            children: [
-              { id: "npi-2-1", label: "Verify Name and Credentials", x: 990, y: 200, level: 3 }
-            ]
-          },
-          { 
-            id: "npi-3", 
-            label: "Taxonomy Code Validation", 
-            x: 720, 
-            y: 240, 
-            level: 2
-          }
-        ]
-      },
-      {
-        id: "license",
-        label: "Medical License Verification",
-        x: 450,
-        y: 310,
-        level: 1,
-        children: [
-          { 
-            id: "license-1", 
-            label: "State Medical Board Scraping", 
-            x: 720, 
-            y: 280, 
-            level: 2,
-            children: [
-              { id: "license-1-1", label: "Multi-State License Query", x: 990, y: 260, level: 3 },
-              { id: "license-1-2", label: "Parse and Normalize License Data", x: 990, y: 300, level: 3,
-                children: [
-                  { id: "license-1-2-1", label: "Extract License Number", x: 1260, y: 290, level: 4 },
-                  { id: "license-1-2-2", label: "Verify License Format", x: 1260, y: 330, level: 4 }
-                ]
-              }
-            ]
-          },
-          { 
-            id: "license-2", 
-            label: "Expiration Date Monitoring", 
-            x: 720, 
-            y: 350, 
-            level: 2
-          },
-          { 
-            id: "license-3", 
-            label: "Disciplinary Action Check", 
-            x: 720, 
-            y: 390, 
-            level: 2
-          }
-        ]
-      },
-      {
-        id: "contact",
-        label: "Contact Information Enrichment",
-        x: 450,
-        y: 460,
-        level: 1,
-        children: [
-          { 
-            id: "contact-1", 
-            label: "Phone Number Validation", 
-            x: 720, 
-            y: 440, 
-            level: 2
-          },
-          { 
-            id: "contact-2", 
-            label: "Email Address Discovery", 
-            x: 720, 
-            y: 480, 
-            level: 2
-          }
-        ]
-      },
-      {
-        id: "quality",
-        label: "Data Quality Scoring",
-        x: 450,
-        y: 570,
-        level: 1
-      }
-    ]
-  };
+export function IdeationCanvas({ nodes: dynamicNodes = [] }: IdeationCanvasProps) {
+  const [canvasNodes, setCanvasNodes] = useState<CanvasNode[]>([]);
+  const [edges, setEdges] = useState<Edge[]>([]);
+  const [viewOffset] = useState({ x: 50, y: 50 });
+  const canvasRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!autoStart) {
-      setVisibleNodes([
-        "root", "npi", "license", "contact", "quality",
-        "npi-1", "npi-2", "npi-3", "npi-1-1", "npi-1-2", "npi-2-1",
-        "license-1", "license-2", "license-3", "license-1-1", "license-1-2", "license-1-2-1", "license-1-2-2",
-        "contact-1", "contact-2"
-      ]);
+    if (dynamicNodes.length === 0) {
+      setCanvasNodes([]);
+      setEdges([]);
       return;
     }
 
-    // Step 1: Show root node
-    setVisibleNodes(["root"]);
+    const nodeMap = new Map<string, ProcessingNode>();
+    dynamicNodes.forEach(n => nodeMap.set(n.id, n));
 
-    // Step 2: Show loading skeleton for level 1 nodes
-    setTimeout(() => {
-      setLoadingNodes(["npi", "license", "contact", "quality"]);
-    }, 800);
+    const childrenMap = new Map<string, string[]>();
+    
+    dynamicNodes.forEach(n => {
+      if (n.children && n.children.length > 0) {
+        childrenMap.set(n.id, [...(childrenMap.get(n.id) || []), ...n.children]);
+      }
+    });
+    
+    dynamicNodes.forEach(n => {
+      if (n.parentId) {
+        const parentChildren = childrenMap.get(n.parentId) || [];
+        if (!parentChildren.includes(n.id)) {
+          childrenMap.set(n.parentId, [...parentChildren, n.id]);
+        }
+      }
+    });
 
-    // Step 3: Replace skeleton with actual level 1 nodes
-    setTimeout(() => {
-      setVisibleNodes(["root", "npi", "license", "contact", "quality"]);
-      setLoadingNodes([]);
-    }, 2200);
-
-    // Step 4: Show loading skeleton for NPI children (level 2)
-    setTimeout(() => {
-      setLoadingNodes(["npi-1", "npi-2", "npi-3"]);
-    }, 2800);
-
-    // Step 5: Show NPI level 2 nodes
-    setTimeout(() => {
-      setVisibleNodes(prev => [...prev, "npi-1", "npi-2", "npi-3"]);
-      setLoadingNodes([]);
-    }, 3800);
-
-    // Step 6: Show loading skeleton for NPI level 3 nodes
-    setTimeout(() => {
-      setLoadingNodes(["npi-1-1", "npi-1-2", "npi-2-1"]);
-    }, 4300);
-
-    // Step 7: Show NPI level 3 nodes
-    setTimeout(() => {
-      setVisibleNodes(prev => [...prev, "npi-1-1", "npi-1-2", "npi-2-1"]);
-      setLoadingNodes([]);
-    }, 5300);
-
-    // Step 8: Show loading skeleton for License children (level 2)
-    setTimeout(() => {
-      setLoadingNodes(["license-1", "license-2", "license-3"]);
-    }, 5800);
-
-    // Step 9: Show License level 2 nodes
-    setTimeout(() => {
-      setVisibleNodes(prev => [...prev, "license-1", "license-2", "license-3"]);
-      setLoadingNodes([]);
-    }, 6800);
-
-    // Step 10: Show loading skeleton for License level 3 nodes
-    setTimeout(() => {
-      setLoadingNodes(["license-1-1", "license-1-2"]);
-    }, 7300);
-
-    // Step 11: Show License level 3 nodes
-    setTimeout(() => {
-      setVisibleNodes(prev => [...prev, "license-1-1", "license-1-2"]);
-      setLoadingNodes([]);
-    }, 8300);
-
-    // Step 12: Show loading skeleton for License level 4 nodes
-    setTimeout(() => {
-      setLoadingNodes(["license-1-2-1", "license-1-2-2"]);
-    }, 8800);
-
-    // Step 13: Show License level 4 nodes
-    setTimeout(() => {
-      setVisibleNodes(prev => [...prev, "license-1-2-1", "license-1-2-2"]);
-      setLoadingNodes([]);
-    }, 9800);
-
-    // Step 14: Show loading skeleton for Contact children (level 2)
-    setTimeout(() => {
-      setLoadingNodes(["contact-1", "contact-2"]);
-    }, 10300);
-
-    // Step 15: Show Contact level 2 nodes - final step
-    setTimeout(() => {
-      setVisibleNodes(prev => [...prev, "contact-1", "contact-2"]);
-      setLoadingNodes([]);
-    }, 11300);
-  }, [autoStart]);
-
-  const getAllNodes = (node: NodeData): NodeData[] => {
-    let nodes = [node];
-    if (node.children) {
-      node.children.forEach(child => {
-        nodes = [...nodes, ...getAllNodes(child)];
-      });
+    const allChildIds = new Set<string>();
+    childrenMap.forEach(children => children.forEach(c => allChildIds.add(c)));
+    dynamicNodes.forEach(n => {
+      if (n.parentId) allChildIds.add(n.id);
+    });
+    
+    const rootNodes = dynamicNodes.filter(n => !allChildIds.has(n.id) && !n.parentId);
+    
+    if (rootNodes.length === 0 && dynamicNodes.length > 0) {
+      rootNodes.push(dynamicNodes[0]);
     }
-    return nodes;
-  };
 
-  const allNodes = getAllNodes(rootNode);
-  
-  const getConnections = () => {
-    const connections: { from: NodeData; to: NodeData }[] = [];
-    const traverse = (node: NodeData) => {
-      if (node.children) {
-        node.children.forEach(child => {
-          connections.push({ from: node, to: child });
-          traverse(child);
+    const NODE_WIDTH = 220;
+    const NODE_HEIGHT = 55;
+    const HORIZONTAL_GAP = 60;
+    const VERTICAL_GAP = 25;
+    const START_X = 40;
+    const START_Y = 60;
+
+    const layoutNodes: CanvasNode[] = [];
+    const layoutEdges: Edge[] = [];
+
+    const depthYPositions: Map<number, number> = new Map();
+
+    interface QueueItem {
+      node: ProcessingNode;
+      parentId?: string;
+      depth: number;
+    }
+
+    const queue: QueueItem[] = rootNodes.map(n => ({ node: n, depth: 0 }));
+    const visited = new Set<string>();
+
+    while (queue.length > 0) {
+      const { node, parentId, depth } = queue.shift()!;
+      
+      if (visited.has(node.id)) continue;
+      visited.add(node.id);
+
+      const x = START_X + depth * (NODE_WIDTH + HORIZONTAL_GAP);
+      const currentY = depthYPositions.get(depth) || START_Y;
+      const y = currentY;
+
+      depthYPositions.set(depth, currentY + NODE_HEIGHT + VERTICAL_GAP);
+
+      layoutNodes.push({
+        id: node.id,
+        label: node.label,
+        description: node.description,
+        x,
+        y,
+        status: node.status,
+        agent: node.agent,
+        parentId,
+        depth,
+        visible: true,
+      });
+
+      if (parentId) {
+        layoutEdges.push({
+          from: parentId,
+          to: node.id,
+          animated: node.status === 'processing',
         });
       }
+
+      const nodeChildren = childrenMap.get(node.id) || node.children || [];
+      nodeChildren.forEach(childId => {
+        const child = nodeMap.get(childId);
+        if (child && !visited.has(childId)) {
+          queue.push({ node: child, parentId: node.id, depth: depth + 1 });
+        }
+      });
+    }
+
+    setCanvasNodes(layoutNodes);
+    setEdges(layoutEdges);
+  }, [dynamicNodes]);
+
+  const getNodeCenter = useCallback((nodeId: string): { x: number; y: number } | null => {
+    const node = canvasNodes.find(n => n.id === nodeId);
+    if (!node) return null;
+    return {
+      x: node.x + 100 + viewOffset.x, // Half of node width
+      y: node.y + 25 + viewOffset.y,  // Half of node height
     };
-    traverse(rootNode);
-    return connections;
+  }, [canvasNodes, viewOffset]);
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'processing': return 'border-cyan-400 bg-white';
+      case 'complete': return 'border-gray-300 bg-white';
+      case 'error': return 'border-gray-300 bg-white';
+      default: return 'border-gray-200 bg-white';
+    }
   };
 
-  return (
-    <div className="relative w-full h-full bg-gradient-to-br from-gray-50 via-white to-cyan-50/20 overflow-auto">
-      <div className="relative min-w-[1400px] min-h-[700px] w-full h-full">
-        <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ minWidth: "1400px", minHeight: "700px" }}>
-          {getConnections().map((conn, i) => {
-            const fromX = conn.from.x + 100;
-            const fromY = conn.from.y + 20;
-            const toX = conn.to.x;
-            const toY = conn.to.y + 20;
-            
-            const midX = (fromX + toX) / 2;
-            const path = `M ${fromX} ${fromY} C ${midX} ${fromY}, ${midX} ${toY}, ${toX} ${toY}`;
-            
-            const isVisible = visibleNodes.includes(conn.to.id);
-            
-            return (
-              <path
-                key={i}
-                d={path}
-                stroke="#94a3b8"
-                strokeWidth="1.5"
-                fill="none"
-                className={`transition-all duration-700 ${isVisible ? 'opacity-100' : 'opacity-20'}`}
-                style={{
-                  animationDelay: `${i * 80}ms`
-                }}
-              />
-            );
-          })}
-        </svg>
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'processing':
+        return (
+          <div className="w-3.5 h-3.5 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin" />
+        );
+      case 'complete':
+        return (
+          <svg className="w-3.5 h-3.5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+        );
+      case 'error':
+        return (
+          <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+        );
+      default:
+        return <div className="w-3.5 h-3.5 rounded-full bg-gray-200" />;
+    }
+  };
 
-        <div className="absolute inset-0" style={{ minWidth: "1400px", minHeight: "700px" }}>
-          {allNodes.map((node, i) => {
-            const isVisible = visibleNodes.includes(node.id);
-            const isLoading = loadingNodes.includes(node.id);
-            
-            return (
-              <div
-                key={node.id}
-                className={`absolute transition-all duration-300 ${(isVisible || isLoading) ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
-                style={{
-                  left: node.x,
-                  top: node.y,
-                  animationDelay: `${i * 100}ms`
-                }}
-              >
-                {isLoading ? (
-                  <div 
-                    className="h-[44px] rounded-lg bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 animate-shimmer" 
-                    style={{
-                      width: node.level === 0 ? "260px" : node.level === 1 ? "240px" : node.level === 2 ? "230px" : node.level === 3 ? "250px" : "220px",
-                      backgroundSize: "200% 100%"
-                    }}
-                  />
-                ) : (
-                  <div
-                    className={`bg-white border rounded-lg px-4 py-2.5 shadow-sm cursor-pointer hover:shadow-md transition-all node-appear border-gray-200 ${node.level === 0 && "border-2 font-semibold border-gray-400"}`}
-                    style={{
-                      minWidth: node.level === 0 ? "260px" : node.level === 1 ? "240px" : node.level === 2 ? "230px" : node.level === 3 ? "250px" : "220px",
-                      maxWidth: node.level === 0 ? "260px" : node.level === 1 ? "240px" : node.level === 2 ? "230px" : node.level === 3 ? "250px" : "220px",
-                      animation: isVisible ? `nodeAppear 0.5s ease-out ${i * 100}ms both` : 'none'
-                    }}
-                  >
-                    <p className={`text-sm leading-tight text-gray-800 ${node.level === 0 ? "text-base" : "text-xs"}`}>
-                      {node.label}
-                    </p>
+  const drawEdge = (edge: Edge) => {
+    const from = getNodeCenter(edge.from);
+    const to = canvasNodes.find(n => n.id === edge.to);
+    
+    if (!from || !to) return null;
+
+    const toX = to.x + viewOffset.x;
+    const toY = to.y + 25 + viewOffset.y;
+
+    const midX = from.x + (toX - from.x) / 2;
+
+    const pathD = `M ${from.x} ${from.y} C ${midX} ${from.y}, ${midX} ${toY}, ${toX} ${toY}`;
+
+    return (
+      <g key={`${edge.from}-${edge.to}`}>
+        <path
+          d={pathD}
+          fill="none"
+          stroke={edge.animated ? '#06b6d4' : '#d1d5db'}
+          strokeWidth={2}
+          strokeDasharray={edge.animated ? '5,5' : 'none'}
+          className={edge.animated ? 'animate-dash' : ''}
+        />
+        {/* Arrow head */}
+        <circle
+          cx={toX}
+          cy={toY}
+          r={4}
+          fill={edge.animated ? '#06b6d4' : '#d1d5db'}
+        />
+      </g>
+    );
+  };
+
+  if (dynamicNodes.length === 0) {
+    return (
+      <div className="h-full flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 rounded-xl bg-gray-100 mx-auto mb-4 flex items-center justify-center">
+            <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
+            </svg>
+          </div>
+          <p className="text-[14px] text-gray-600 mb-1">Agent Flow Visualization</p>
+          <p className="text-[12px] text-gray-400">Nodes will appear as agents process your task</p>
+        </div>
+      </div>
+    );
+  }
+
+  const maxX = Math.max(...canvasNodes.map(n => n.x + 200)) + 100;
+  const maxY = Math.max(...canvasNodes.map(n => n.y + 60)) + 100;
+
+  return (
+    <div 
+      ref={canvasRef}
+      className="h-full w-full overflow-auto bg-gradient-to-br from-white via-gray-50/50 to-cyan-50/20"
+    >
+      <svg 
+        width={Math.max(maxX + viewOffset.x, 1200)}
+        height={Math.max(maxY + viewOffset.y, 600)}
+        className="min-w-full min-h-full"
+      >
+        {/* CSS for animated dash */}
+        <defs>
+          <style>
+            {`
+              @keyframes dash {
+                to {
+                  stroke-dashoffset: -20;
+                }
+              }
+              .animate-dash {
+                animation: dash 0.5s linear infinite;
+              }
+            `}
+          </style>
+        </defs>
+
+        {/* Draw edges first (behind nodes) */}
+        <g className="edges">
+          {edges.map(edge => drawEdge(edge))}
+        </g>
+
+        {/* Draw nodes */}
+        <g className="nodes">
+          {canvasNodes.map((node, index) => (
+            <g 
+              key={node.id}
+              className="transition-all duration-500 ease-out"
+              style={{
+                transform: `translate(${node.x + viewOffset.x}px, ${node.y + viewOffset.y}px)`,
+                opacity: node.visible ? 1 : 0,
+                animationDelay: `${index * 100}ms`,
+              }}
+            >
+              {/* Node background */}
+              <foreignObject width={220} height={55} x={0} y={0}>
+                <div 
+                  className={`
+                    h-full px-3 py-2 rounded-lg border transition-all duration-300
+                    ${getStatusColor(node.status)}
+                    ${node.status === 'processing' ? 'shadow-md' : 'shadow-sm'}
+                  `}
+                >
+                  <div className="flex items-start gap-2">
+                    <div className="flex-shrink-0 mt-0.5">
+                      {getStatusIcon(node.status)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[11px] font-medium text-gray-800 leading-tight line-clamp-2">
+                        {node.label}
+                      </p>
+                      {node.description && (
+                        <p className="text-[9px] text-gray-400 truncate mt-0.5">
+                          {node.description}
+                        </p>
+                      )}
+                    </div>
                   </div>
-                )}
-              </div>
-            );
-          })}
+                </div>
+              </foreignObject>
+            </g>
+          ))}
+        </g>
+      </svg>
+
+      {/* Legend - simplified */}
+      <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm rounded-lg border border-gray-200 px-3 py-2">
+        <div className="flex items-center gap-4 text-[10px] text-gray-500">
+          <div className="flex items-center gap-1.5">
+            <div className="w-2.5 h-2.5 rounded-full border-2 border-cyan-400" />
+            <span>Processing</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-2.5 h-2.5 rounded-full border-2 border-gray-300" />
+            <span>Complete</span>
+          </div>
         </div>
       </div>
     </div>
   );
 }
+
+export default IdeationCanvas;
