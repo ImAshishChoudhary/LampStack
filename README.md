@@ -23,9 +23,7 @@
 
 ---
 
-<div align="center">
-  <img src="https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExYzJneGkzMGpjMWRoNmR5cm9qZDkybmpkdmFydjN1dDZuZ2RtMGNhaSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/k22ampXba3fW2Ih7g9/giphy.gif" alt="Demo" width="800">
-</div>
+https://github.com/user-attachments/assets/76b072ca-475c-4790-a20c-c9b5c29bb99a
 
 ---
 
